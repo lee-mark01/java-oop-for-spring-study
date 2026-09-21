@@ -131,7 +131,7 @@ public class 동물{
 ```
 재정의(오버라이딩)을 금지
 
-### 05_instanceof 연산자
+## 05_instanceof 연산자
 :객체가 특정 클래스의 인스턴스인지 물어보는 연산자, true 또는 false 반환
 
 `객체_참조_변수 instanceof 클래스명`
