@@ -143,4 +143,77 @@ public class 동물{
    마케팅 사업부에서는 마케팅사업부.Customer라고 지정
    이처럼 Customer라는 명칭은 같지만 소유자는 각각이 되고 이 소유자가 **패키지**이다.
 
+## 07_interface 키워드와 implements 키워드
+interface는 public 추상 메서드와 public 정적 상수만 가질 수 있다. 
+```java
+interface Speakable{
+	double PI = 3.14;
+	void say();
+```
 
+따라서 메서드에 public과 abstract, 속성에 public과 stati,final을 붙이지 않아도 자바가 자동으로 알아서 붙여준다.
+
+```java
+interface Speakable{
+	public static final double PI = 3.14;
+	public abstract void say();
+```
+## 08_this 키워드
+- 지역변수와 속성(객체 변수, 정적 변수)의 이름이 같은 경우 지역 변수가 우선한다.
+- 객체 변수와 이름이 같은 지역 변수가 있는 경우 객체 변수를 사용하려면 this 접두사를 사용한다.
+- 정적 변수와 이름이 같은 지역 변수가 있는 경우 정적 변수를 사용하려면 클래스명을 접두사로 사용한다.
+```java
+package This;
+
+class 펭귄{
+	int var = 10;
+
+void test() {
+	System.out.println(this.var);
+	}
+}
+ ...
+	펭귄 뽀로로 = new 펭귄();
+	뽀로로.test();
+```
+메서드 안의 this는 뽀로로 가르키는 객체이므로 10이 출력된다.
+
+## 09_super 키워드
+바로 위 상위 클래스의 인스턴스를 지칭함.
+```java
+class 동물{
+	int var = 10;
+}
+
+class 펭귄 extends 동물{
+	void test(){
+		System.out.println(super.var);
+	}
+}
+```
+super 키워드로 상위 클래스의 인스턴스 메서드를 호출하므로 동물에 있는 10이 출력된다.
+
+# 5장_객체 지향 설계 5원칙-SOLID
+## 01_SRP(Single Responsibility Principle)-단일 책임 원칙
+:클래스를 역할에 따라서 분할하는 것을 말한다. 
+- 클래스뿐만 아니라 속성, 메서드, 패키지, 모듈, 컴포넌트, 프레임워크 등에도 적용 가능하다.
+- 객체 지향 4대 특성 중 추상화와 관련이 있다. 공통적이고 핵심적인 개념을 봅아내는 것이 추상화이기 때문이다.
+```java
+void 행동하다(){
+	if(this.사람 = 학생){
+		//공부한다.
+	}else{
+		//가르친다.
+```
+행동하다() 메서드에서 학생이냐 교수님이냐 따라서 분기 처리가 진행되고 있음을 볼 수 있다. 
+행동하다() 메서드가 모두 교수님과 학생 모두를 구현하려고 하기에 단일 책임 원칙을 위배라고 있는 것이다.
+다음과 같이 코드를 바꿀 수 있다.
+```java
+class 교수님 extends 사람{
+	void 행동한다(){
+		//가르친다.
+	}
+}
+class 학생 extends 사람{
+....
+```
