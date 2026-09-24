@@ -232,6 +232,21 @@ class 학생 extends 사람{
 ## 03_LSP(Liskov Substitution Principle) 리스코브 치환 법칙
 - 하위 분류는 상위 분류의 한 종류다.
 - 하위에 존재하는 것들은 상위에 있는 것들의 역할을 하는 데 전혀 문제가 없어야한다.
+```java
+class 새 {
+    void 날기() { System.out.println("날아간다"); }
+}
+
+class 참새 extends 새 { }
+
+class 펭귄 extends 새 {
+    @Override
+    void 날기() { throw new UnsupportedOperationException(); }
+}
+
+새 객체를 받아서 날기()를 호출한다고 했을 때 참새를 받으면 날아가지만 펭귄을 넣으면 오류가 된다.
+즉, 새의 하위 클래스라고 선언해 놓고 새의 역할을 대신할 수 없으므로 LSP를 위반하는 것이다.
+```
 
 ## 04_ISP(Interface Segregation Principle) 인터페이스 분리 원칙
 - 클래스의 역할을 인터페이스 제한을 통해서 나누는 것이다.
