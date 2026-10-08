@@ -398,7 +398,7 @@ Tire tire;
 ```xml
 <!-- expert006.xml -->
 <bean id="tire" class="expert006.KoreaTire"></bean>
-<bean id="wheel" class="expert006.AmericaTire"></bean>
+<bean id="tire2" class="expert006.AmericaTire"></bean>
 <bean id="car" class="expert006.Car"></bean>
 ```
 
