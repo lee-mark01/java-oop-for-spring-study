@@ -1,6 +1,6 @@
 # 7장 스프링 삼각형과 설정 정보
 
-## IoC / DI
+## 1. IoC / DI
 
 ### 의존성이란 무엇인가
 책은 자동차-타이어 예시로 시작하고 있다.
@@ -176,4 +176,158 @@ Car(Tire tire) {
 @Resource(name = "koreaTire")
 private Tire tire;
 ```
+--- 
 
+## 2. AOP
+AOP의 목적은 여러 핵심 로직에서 반복해서 끼어드는 공통 로직을 밖으로 빼고 핵심 관심사만 남기는 것
+
+책의 예시로 DB 작업은 `커넥션 획득 -> 실제 DB 작업 -> 커넥션 반납` 에서 실제 DB 작업만 매번 달라지고 앞뒤는 반복된다.
+
+---
+
+### 관련 어노테이션들
+1. `@Aspect` 어노테이션
+> 이 클래스가 AOP용 공통 로직을 담는 클래스다 라고 표시하는 것
+
+2. `@Before` 어노테이션
+> 대상 메서드가 실행되기 전에 이 코드를 먼저 실행해라 라고 표시하는 것
+
+3. `@After` 어노테이션
+> 대상 메서드가 실행된 후에 이 코드를 실행해라 라고 표시하는 것
+
+4. `@AfterReturning` 어노테이션
+> 값을 정상적으로 반환한 후에 이 코드를 실행해라 라고 표시하는 것
+
+5. `@Around` 어노테이션
+> 실행 전후 전체를 감쌈. 실행 전에도 뭔가 할 수 있고, 실제 메서드를 호출한 뒤에도 뭔가 할 수 있다.
+
+---
+
+### 관련 용어들
+1. Aspect: 공통 관심사를 모아놓은 전체 모듈
+2. Advice: 실제로 끼워 넣을 코드
+3. Pointcut: 어디에 끼워 넣을지 정하는 조건
+4. Join Point: 실제로 끼어들 수 있는 지점
+5. Advisor: Pointcut + Advice를 묶은 것
+
+```java
+@Before("execution(* com.example..*(..))") // -> Pointcut
+public void log() { 
+  System.out.println("로그"); // -> Advice
+}
+// 어떤 서비스 메서드 실행 지점 자체가 Join Point
+// 이 전체를 담는 AOP 클래스가 Aspect
+```
+한문장으로 정리하면
+> Aspect 안에 Advice가 있고, Pointcut으로 어떤 Join Point에 Advice를 적용할지 정한다.
+
+---
+
+### 대표적인 AOP: `@Transactional`
+우리가 스프링 프로젝트에서 매~번 쓰는 트랜잭션 어노테이션이다.
+
+아래의 순서대로 진행이 된다.
+
+
+DB 커넥션을 획득 -> 트랜잭션 시작 -> 비즈니스 로직 수행 -> 성공하면 커밋/실패하면 롤백 -> 커넥션 종료
+
+따라서 아래의 코드를 작성해야한다.
+
+```java
+public void order() {
+    Connection con = null; 
+
+    try {
+        con = dataSource.getConnection(); // 커넥션 획득
+        con.setAutoCommit(false); // 자동커밋 끄기 & 트랜잭션 시작 
+
+        // 핵심 비즈니스 로직
+        orderRepository.save(...); // 주문정보저장 (핵심 관심사)
+        paymentRepository.save(...); // 결제정보저장 (핵심 관심사)
+
+        con.commit(); // 성공하면 커밋
+
+    } catch (Exception e) {
+        if (con != null) {
+            con.rollback(); // 실패하면 롤백
+        }
+        throw e;
+    } finally {
+        if (con != null) {
+            con.close(); // 커넥션 정리
+        }
+    }
+}
+```
+
+그런데 여기서 주문정보저장, 결제정보저장은 *핵심 관심사*이고, 나머지는 전부 *횡단관심사*이다.
+
+DB 커밋과 롤백의 원자성이 필요한 모든 비즈니스 로직은 위 패턴이 반복된다.
+
+여기서 AOP 용어를 연결하면,
+
+1. Aspect: 트랜잭션이라는 횡단 관심사 전체
+2. Advice: 트랜잭션 시작, commit, rollback처럼 실제로 실행되는 부가 로직
+3. Pointcut: 어떤 메서드에 트랜잭션 기능을 적용할지 정하는 조건
+4. Join Point: 실제 서비스 메서드가 실행되는 지점
+5. Advisor: 어떤 Pointcut에 어떤 Advice를 적용할지 묶은 것
+
+그리고 트랜잭션은 메서드 전후 전체를 감싸야함으로, 개념적으로 `Around` Advice와 잘 맞는다.
+
+그래서 결국 `@Transactional` 을 붙이면, 아래와 같이 핵심 로직만 작성하면 된다. 그럼 결국 이 애너테이션은 "이 메서드 실행에 트랜잭션 기능을 적용해줘" 라고 표시하는 역할이 된다.
+```java
+@Transactional
+public void order() {
+  orderRepository.save(...);
+  paymentRepository.save(...);
+}
+```
+
+#### 위 AOP 과정에서 프록시의 역할
+그럼 Spring은 실제로 메서드에 코드를 어떻게 주입할까?
+
+order() 메서드 몸체에 공통 처리 코드를 주입할까? 그렇지 않다.
+
+대리 객체, proxy를 둔다. 
+
+6장에서 공부한 그 프록시 패턴 맞다. 
+
+실제 객체 앞에 대리 객체를 둠으로 클라이언트가 원본 객체에 직접 접근하는 대신 프록시를 거쳐 *제어*하도록 만드는 구조 디자인 패
+
+`Controller` 객체가 `Service` 객체를 호출하면, `Transaction Proxy`가 먼저 받는다.
+
+```text
+Controller
+   ↓
+Transaction Proxy
+   ↓
+실제 OrderService
+```
+
+그럼 프록시는 트랜잭션을 시작하고, 실제 OrderService.order()를 호출하고, 성공하면 커밋/실패하면 롤백을 수행한다.
+
+개념적으로는 아래 코드처럼 프록시가 로직을 수행한다.
+
+```java
+class TransactionProxy {
+  private final OrderService orderService;
+
+  void order() {
+    beginTransaction();
+
+    try {
+      realService.order();
+      commit();
+    } catch (Exception e) {
+        rollback();
+        throw e;
+      }
+    }
+}
+```
+
+---
+
+### 면접이나 실무에서 Spring AOP에 대해 추가로 알아야할 두가지
+#### 첫째, Spring AOP는 주로 프록시 기반이어서 프록시를 거쳐야 적용이 된다.
+#### 둘째, 그래서 같은 객체 내부에서 자기 메서드를 직접 호출하는 경우처럼 프록시를 우회하면 AOP가 적용되지 않을 수 있다.
