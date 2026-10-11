@@ -117,8 +117,6 @@ StudyService service = new StudyService(new SmsNotifier());
 
 객체를 먼저 만든 뒤 `setter`로 의존성을 전달한다.
 
-아래 코드는 앞의 생성자 주입 예제와 별개의 예제이다.
-
 ```java
 class StudyService {
     private Notifier notifier;
