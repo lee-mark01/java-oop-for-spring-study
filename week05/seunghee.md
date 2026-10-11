@@ -346,3 +346,71 @@ DB 접근 기술이 무엇이든 개발자가 일관된 방식으로 데이터�
 이러면 구체기술이 바뀌어도 애플리케이션 코드를 최대한 덜 바꿀 수 있게 된다.
 
 DIP는 구체 구현보다 추상화에 의존하는 원칙이라고 했다. 그런 추상화 계층을 제공하는 것이 Spring의 PSA이다.
+
+### 또 트랜잭션 예시
+
+JDBC로 트랜잭션 코드 작성은 아래와 같다.
+
+서비스 코드에서 connection, setAutoCommit, commit, rollback 등 JDBC 기술 개념들이 작성되어있다.
+
+```java
+Connection connection = dataSource.getConnection();
+
+try {
+    connection.setAutoCommit(false);
+
+    orderRepository.save(connection, order);
+    paymentRepository.save(connection, payment);
+
+    connection.commit();
+} catch (Exception e) {
+    connection.rollback();
+    throw e;
+} finally {
+    connection.close();
+}
+```
+
+그런데 나중에 JPA로 변경하면? 위 코드를 바꿔야한다.
+```java
+EntityTransaction transaction =
+        entityManager.getTransaction();
+
+try {
+    transaction.begin();
+
+    // 비즈니스 로직
+
+    transaction.commit();
+} catch (Exception e) {
+    transaction.rollback();
+    throw e;
+}
+```
+
+서비스가 DB 기술과 강하게 결합되어있다.
+
+그런데 PSA를 적용하면
+```java
+@Service
+public class OrderService {
+
+  @Transactional
+  public void order() {
+    orderRepository.save();
+    paymentRepository.save();
+  }
+}
+```
+
+내부에서는 사용하는 기술에 맞는 구현체가 동작한다.
+```text
+OrderService
+    ↓
+@Transactional
+    ↓
+PlatformTransactionManager
+    ├── DataSourceTransactionManager  → JDBC
+    ├── JpaTransactionManager         → JPA
+    └── JtaTransactionManager         → 분산 트랜잭션
+```
