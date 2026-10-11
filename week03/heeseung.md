@@ -93,6 +93,40 @@
    - 구체적인 구현 클래스가 아닌 인터페이스에 의존하게 함.
    - 구현체의 내부 코드나 구현 방식이 변경되더라도, 호출자에게 그 영향이 전파되지 않음.
 
+```java
+abstract class Animal {
+  abstract void bark()
+}
+
+class Dog extends Animal {
+  void bark() {
+    System.out.println("왈왈");
+  }
+}
+
+class Cat extends Animal {
+  void bark() {
+    System.out.println("야옹");
+  }
+}
+
+class CatDog extends Dog, Cat {}
+
+CatDog catdog = new CatDog();
+catdog.bark(); // 왈왈? 야옹?
+
+
+     Animal
+       /\
+     Dog Cat
+       \/
+     CatDog
+```
+
+
+
+
+
 
 
 #### 5. this와 super
